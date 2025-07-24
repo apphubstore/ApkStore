@@ -1,426 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Web App Store</title>
-  <style>
-    :root {
-      --primary: #6200ee;
-      --bg: #f5f5f5;
-      --text: #333;
-      --card-bg: #fff;
-    }
-    [data-theme="dark"] {
-      --bg: #121212;
-      --text: #f0f0f0;
-      --card-bg: #1e1e1e;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      padding: 1rem;
-      transition: all 0.3s ease;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .search-bar {
-      flex: 1;
-    }
-    .search-bar input {
-      width: 100%;
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    .app-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .app-card {
-      background: var(--card-bg);
-      padding: 1rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      text-align: center;
-      transition: transform 0.2s;
-      cursor: pointer;
-    }
-    .app-card:hover {
-      transform: scale(1.02);
-    }
-    .app-card img {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      margin-bottom: 0.5rem;
-    }
-    .modal-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal {
-      background: var(--card-bg);
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-      position: relative;
-    }
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      font-size: 1.2rem;
-      color: #999;
-      cursor: pointer;
-    }
-    a.download-btn {
-      display: inline-block;
-      margin-top: 1rem;
-      background: var(--primary);
-      color: white;
-      text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-    }
-    .admin-panel input,
-    .admin-panel button {
-      display: block;
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .admin-panel button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .theme-toggle {
-      cursor: pointer;
-      padding: 0.5rem 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      user-select: none;
-      background: transparent;
-      color: var(--text);
-      font-weight: 600;
-    }
-    .login-form input,
-    .login-form button {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .login-form button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .actions button {
-      background: red;
-      color: white;
-      border: none;
-      padding: 0.3rem 0.6rem;
-      border-radius: 4px;
-      margin-top: 5px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAppStore - Discover Amazing Apps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .app-card { transition: all 0.3s ease; }
+        .app-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .gradient-hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .category-card:hover { transform: scale(1.05); }
+        .install-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .floating-nav { backdrop-filter: blur(20px); background: rgba(255, 255, 255, 0.95); }
+        .app-icon { width: 60px; height: 60px; border-radius: 16px; }
+        .rating-stars { color: #fbbf24; }
+        .search-glow:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="floating-nav sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">WebAppStore</h1>
+                        <p class="text-xs text-gray-500">Discover & Install</p>
+                    </div>
+                </div>
 
-  <!-- React + ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" onclick="showSection('home')" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Home</a>
+                    <a href="#" onclick="showSection('apps')" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Apps</a>
+                    <a href="#" onclick="showSection('games')" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Games</a>
+                    <a href="#" onclick="showSection('categories')" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Categories</a>
+                </div>
 
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+                <!-- Search & User -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative hidden sm:block">
+                        <input type="text" id="globalSearch" placeholder="Search apps..." class="search-glow w-64 pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    
+                    <button onclick="showSection('developer')" class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </button>
+                    
+                    <button onclick="showSection('admin')" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onclick="showUserMenu()">
+                        <span class="text-white font-semibold text-sm" id="userInitial">U</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-  <script>
-    const { useState, useEffect } = React;
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        <!-- Home Section -->
+        <div id="homeSection">
+            <!-- Hero Section -->
+            <section class="gradient-hero relative overflow-hidden">
+                <div class="absolute inset-0 bg-black opacity-20"></div>
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+                    <div class="text-center text-white">
+                        <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                            Discover Amazing
+                            <span class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Apps</span>
+                        </h1>
+                        <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
+                            Download and install apps instantly. No account required, just click and enjoy!
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button onclick="showSection('apps')" class="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105">
+                                Browse Apps
+                            </button>
+                            <button onclick="showSection('developer')" class="glass-effect border border-white border-opacity-30 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:bg-opacity-20 transition-all">
+                                For Developers
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Floating Elements -->
+                <div class="absolute top-20 left-10 text-6xl opacity-20 animate-bounce">📱</div>
+                <div class="absolute top-40 right-20 text-4xl opacity-30 animate-pulse">🚀</div>
+                <div class="absolute bottom-20 left-1/4 text-5xl opacity-25 animate-bounce" style="animation-delay: 1s;">⭐</div>
+            </section>
 
-    // Supabase client setup - replace with your keys
-    const SUPABASE_URL = "https://fyvbdouahaualthcsrwb.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5dmJkb3VhaGF1YWx0aGNzcndiIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk5Mzk0NzEsImV4cCI6MTk5NTQ5NTQ3MX0.Q4Yy7zpUtbb2kHPCUjvIzrfzqSTKcRR0Ayr1jqXnkfs";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            <!-- Quick Categories -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Explore Categories</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('games')">
+                        <div class="text-5xl mb-4">🎮</div>
+                        <h3 class="font-semibold text-gray-900">Games</h3>
+                        <p class="text-sm text-gray-500 mt-1">245 apps</p>
+                    </div>
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('productivity')">
+                        <div class="text-5xl mb-4">💼</div>
+                        <h3 class="font-semibold text-gray-900">Business</h3>
+                        <p class="text-sm text-gray-500 mt-1">189 apps</p>
+                    </div>
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('education')">
+                        <div class="text-5xl mb-4">📚</div>
+                        <h3 class="font-semibold text-gray-900">Education</h3>
+                        <p class="text-sm text-gray-500 mt-1">156 apps</p>
+                    </div>
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('entertainment')">
+                        <div class="text-5xl mb-4">🎬</div>
+                        <h3 class="font-semibold text-gray-900">Entertainment</h3>
+                        <p class="text-sm text-gray-500 mt-1">203 apps</p>
+                    </div>
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('health')">
+                        <div class="text-5xl mb-4">🏥</div>
+                        <h3 class="font-semibold text-gray-900">Health</h3>
+                        <p class="text-sm text-gray-500 mt-1">98 apps</p>
+                    </div>
+                    <div class="category-card bg-white rounded-3xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="filterByCategory('tools')">
+                        <div class="text-5xl mb-4">🔧</div>
+                        <h3 class="font-semibold text-gray-900">Tools</h3>
+                        <p class="text-sm text-gray-500 mt-1">167 apps</p>
+                    </div>
+                </div>
+            </section>
 
-    function App() {
-      const [apps, setApps] = useState([]);
-      const [query, setQuery] = useState("");
-      const [selectedApp, setSelectedApp] = useState(null);
-      const [user, setUser] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+            <!-- Featured Apps -->
+            <section class="bg-white py-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between mb-12">
+                        <h2 class="text-3xl font-bold text-gray-900">Featured Apps</h2>
+                        <button onclick="showSection('apps')" class="text-blue-600 hover:text-blue-700 font-semibold">View All →</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <!-- App Card 1 -->
+                        <div class="app-card bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="h-48 bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                                <span class="text-7xl">📝</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="app-icon bg-purple-100 flex items-center justify-center">
+                                        <span class="text-3xl">📝</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg">NoteMaster Pro</h3>
+                                        <p class="text-gray-500 text-sm">Productivity</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">Advanced note-taking with real-time collaboration, cloud sync, and AI-powered organization.</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-1">
+                                        <span class="rating-stars">★★★★★</span>
+                                        <span class="text-sm text-gray-500">(4.8)</span>
+                                    </div>
+                                    <span class="font-bold text-green-600">Free</span>
+                                </div>
+                                <button onclick="installApp('NoteMaster Pro', this)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all transform hover:scale-105">
+                                    Install Now
+                                </button>
+                            </div>
+                        </div>
 
-      // Login form state
-      const [email, setEmail] = useState("");
-      const [password, setPassword] = useState("");
-      const [errorMsg, setErrorMsg] = useState("");
+                        <!-- App Card 2 -->
+                        <div class="app-card bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="h-48 bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center">
+                                <span class="text-7xl">💰</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="app-icon bg-green-100 flex items-center justify-center">
+                                        <span class="text-3xl">💰</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg">BudgetTracker</h3>
+                                        <p class="text-gray-500 text-sm">Finance</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">Smart personal finance management with AI insights, expense tracking, and budget planning.</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-1">
+                                        <span class="rating-stars">★★★★☆</span>
+                                        <span class="text-sm text-gray-500">(4.6)</span>
+                                    </div>
+                                    <span class="font-bold text-blue-600">$2.99</span>
+                                </div>
+                                <button onclick="installApp('BudgetTracker', this)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all transform hover:scale-105">
+                                    Install Now
+                                </button>
+                            </div>
+                        </div>
 
-      // Admin upload form state
-      const [newName, setNewName] = useState("");
-      const [newIcon, setNewIcon] = useState("");
-      const [newDesc, setNewDesc] = useState("");
-      const [newApk, setNewApk] = useState("");
+                        <!-- App Card 3 -->
+                        <div class="app-card bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="h-48 bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                                <span class="text-7xl">🎨</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="app-icon bg-orange-100 flex items-center justify-center">
+                                        <span class="text-3xl">🎨</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg">DesignStudio</h3>
+                                        <p class="text-gray-500 text-sm">Graphics & Design</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">Professional graphic design tools with templates, vector editing, and collaboration features.</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-1">
+                                        <span class="rating-stars">★★★★★</span>
+                                        <span class="text-sm text-gray-500">(4.9)</span>
+                                    </div>
+                                    <span class="font-bold text-green-600">Free</span>
+                                </div>
+                                <button onclick="installApp('DesignStudio', this)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all transform hover:scale-105">
+                                    Install Now
+                                </button>
+                            </div>
+                        </div>
 
-      useEffect(() => {
-        document.documentElement.setAttribute("data-theme", theme);
-        localStorage.setItem("theme", theme);
-      }, [theme]);
-
-      useEffect(() => {
-        fetchApps();
-        const session = supabase.auth.session();
-        setUser(session?.user ?? null);
-
-        // Listen to auth changes
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
-            setUser(session?.user ?? null);
-          }
-        );
-
-        return () => {
-          authListener.unsubscribe();
-        };
-      }, []);
-
-      async function fetchApps() {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("apps")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          alert("Error fetching apps: " + error.message);
-        } else {
-          setApps(data);
-        }
-        setLoading(false);
-      }
-
-      async function signIn() {
-        setErrorMsg("");
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          setErrorMsg(error.message);
-        } else {
-          setEmail("");
-          setPassword("");
-        }
-      }
-
-      async function signOut() {
-        await supabase.auth.signOut();
-        setSelectedApp(null);
-      }
-
-      async function addApp() {
-        if (!newName || !newApk) {
-          alert("Please fill app name and APK link at least.");
-          return;
-        }
-        const { data, error } = await supabase.from("apps").insert([
-          {
-            name: newName,
-            icon: newIcon,
-            desc: newDesc,
-            apk: newApk,
-          },
-        ]);
-        if (error) {
-          alert("Error adding app: " + error.message);
-        } else {
-          alert("App added successfully!");
-          setNewName("");
-          setNewIcon("");
-          setNewDesc("");
-          setNewApk("");
-          fetchApps();
-        }
-      }
-
-      async function deleteApp(id) {
-        if (!confirm("Are you sure to delete this app?")) return;
-        const { error } = await supabase.from("apps").delete().eq("id", id);
-        if (error) {
-          alert("Error deleting app: " + error.message);
-        } else {
-          alert("App deleted successfully!");
-          fetchApps();
-          setSelectedApp(null);
-        }
-      }
-
-      const filteredApps = apps.filter((app) =>
-        app.name.toLowerCase().includes(query.toLowerCase())
-      );
-
-      return (
-        React.createElement("div", null,
-          React.createElement("header", null,
-            React.createElement("h1", null, "Web App Store")
-          ),
-          React.createElement("div", { className: "top-bar" },
-            React.createElement("button", {
-              className: "theme-toggle",
-              onClick: () => setTheme(theme === "light" ? "dark" : "light")
-            }, theme === "light" ? "Dark Mode" : "Light Mode"),
-            React.createElement("div", { className: "search-bar" },
-              React.createElement("input", {
-                type: "text",
-                placeholder: "Search apps...",
-                value: query,
-                onChange: e => setQuery(e.target.value)
-              })
-            ),
-            user
-              ? React.createElement("button", { onClick: signOut }, "Logout")
-              : null
-          ),
-          !user ? (
-            React.createElement("div", { className: "login-form" },
-              React.createElement("h2", null, "Admin Login"),
-              React.createElement("input", {
-                type: "email",
-                placeholder: "Email",
-                value: email,
-                onChange: e => setEmail(e.target.value)
-              }),
-              React.createElement("input", {
-                type: "password",
-                placeholder: "Password",
-                value: password,
-                onChange: e => setPassword(e.target.value)
-              }),
-              React.createElement("button", { onClick: signIn }, "Login"),
-              errorMsg && React.createElement("p", { style: { color: "red" } }, errorMsg)
-            )
-          ) : (
-            React.createElement("div", { className: "admin-panel" },
-              React.createElement("h2", null, "Admin Panel - Upload New App"),
-              React.createElement("input", {
-                type: "text",
-                placeholder: "App Name",
-                value: newName,
-                onChange: e => setNewName(e.target.value)
-              }),
-              React.createElement("input", {
-                type: "text",
-                placeholder: "Icon URL",
-                value: newIcon,
-                onChange: e => setNewIcon(e.target.value)
-              }),
-              React.createElement("input", {
-                type: "text",
-                placeholder: "Description",
-                value: newDesc,
-                onChange: e => setNewDesc(e.target.value)
-              }),
-              React.createElement("input", {
-                type: "text",
-                placeholder: "APK URL",
-                value: newApk,
-                onChange: e => setNewApk(e.target.value)
-              }),
-              React.createElement("button", { onClick: addApp }, "Add App")
-            )
-          ),
-          React.createElement("div", { className: "app-grid" },
-            loading
-              ? React.createElement("p", null, "Loading apps...")
-              : filteredApps.length === 0
-              ? React.createElement("p", null, "No apps found.")
-              : filteredApps.map(app =>
-                  React.createElement("div", {
-                    className: "app-card",
-                    key: app.id,
-                    onClick: () => setSelectedApp(app)
-                  },
-                    React.createElement("img", { src: app.icon || "https://img.icons8.com/ios-filled/50/000000/app-store.png", alt: app.name }),
-                    React.createElement("h3", null, app.name),
-                    user && React.createElement("div", { className: "actions" },
-                      React.createElement("button", {
-                        onClick: (e) => {
-                          e.stopPropagation();
-                          deleteApp(app.id);
-                        }
-                      }, "Delete")
-                    )
-                  )
-                )
-          ),
-          selectedApp && React.createElement("div", {
-            className: "modal-bg",
-            onClick: () => setSelectedApp(null)
-          },
-            React.createElement("div", {
-              className: "modal",
-              onClick: e => e.stopPropagation()
-            },
-              React.createElement("button", {
-                className: "close-btn",
-                onClick: () => setSelectedApp(null)
-              }, "\u00D7"),
-              React.createElement("img", {
-                src: selectedApp.icon || "https://img.icons8.com/ios-filled/80/000000/app-store.png",
-                width: 80,
-                alt: selectedApp.name
-              }),
-              React.createElement("h2", null, selectedApp.name),
-              React.createElement("p", null, selectedApp.desc),
-              React.createElement("a", {
-                className: "download-btn",
-                href: selectedApp.apk,
-                target: "_blank",
-                rel: "noopener noreferrer"
-              }, "Download APK")
-            )
-          )
-        )
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-  </script>
-</body>
-  </html>
+                        <!-- App Card 4 -->
+                        <div class="app-card bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="h-48 bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                <span class="text-7xl">⚡</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="app-icon bg-indigo-100 flex items-center justify-center">
+                                        <span class="text-3xl">⚡</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg">TaskFlow</h3>
+                                        <p class="text-gray-500 text-sm">Productivity</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">Project management and team collaboration made simple with kanban boards and time tracking.</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-1">
+                                        <span class="rating-stars">★★★★☆</span>
+                                        <span class="text-sm text-gray-500">(4.7)</span>
+                                    </div>
+                                    <span class="font-bold text="green-600">Free</span>
+                                </div>
+                                <button onclick="installApp('TaskFlow', this)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all transform hover:scale-105">
+                                    Install Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+      
