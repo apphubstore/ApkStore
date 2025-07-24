@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web App Store</title>
+  <style>
+    :root {
+      --primary: #6200ee;
+      --bg: #f5f5f5;
+      --text: #333;
+      --card-bg: #fff;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #f0f0f0;
+      --card-bg: #1e1e1e;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 1rem;
+      transition: all 0.3s ease;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .search-bar {
+      flex: 1;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .app-card {
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .app-card:hover {
+      transform: scale(1.02);
+    }
+    .app-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
+    }
+    .modal-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      color: #999;
+      cursor: pointer;
+    }
+    a.download-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+    }
+    .admin-panel input,
+    .admin-panel button {
+      display: block;
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .admin-panel button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .theme-toggle {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      user-select: none;
+      background: transparent;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .login-form input,
+    .login-form button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .login-form button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .actions button {
+      background: red;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      margin-top: 5px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const { useState, useEffect } = React;
+
+    // Supabase client setup - replace with your keys
+    const SUPABASE_URL = "https://fyvbdouahaualthcsrwb.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5dmJkb3VhaGF1YWx0aGNzcndiIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk5Mzk0NzEsImV4cCI6MTk5NTQ5NTQ3MX0.Q4Yy7zpUtbb2kHPCUjvIzrfzqSTKcRR0Ayr1jqXnkfs";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function App() {
+      const [apps, setApps] = useState([]);
+      const [query, setQuery] = useState("");
+      const [selectedApp, setSelectedApp] = useState(null);
+      const [user, setUser] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+      // Login form state
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [errorMsg, setErrorMsg] = useState("");
+
+      // Admin upload form state
+      const [newName, setNewName] = useState("");
+      const [newIcon, setNewIcon] = useState("");
+      const [newDesc, setNewDesc] = useState("");
+      const [newApk, setNewApk] = useState("");
+
+      useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+      }, [theme]);
+
+      useEffect(() => {
+        fetchApps();
+        const session = supabase.auth.session();
+        setUser(session?.user ?? null);
+
+        // Listen to auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            setUser(session?.user ?? null);
+          }
+        );
+
+        return () => {
+          authListener.unsubscribe();
+        };
+      }, []);
+
+      async function fetchApps() {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("apps")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          alert("Error fetching apps: " + error.message);
+        } else {
+          setApps(data);
+        }
+        setLoading(false);
+      }
+
+      async function signIn() {
+        setErrorMsg("");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setErrorMsg(error.message);
+        } else {
+          setEmail("");
+          setPassword("");
+        }
+      }
+
+      async function signOut() {
+        await supabase.auth.signOut();
+        setSelectedApp(null);
+      }
+
+      async function addApp() {
+        if (!newName || !newApk) {
+          alert("Please fill app name and APK link at least.");
+          return;
+        }
+        const { data, error } = await supabase.from("apps").insert([
+          {
+            name: newName,
+            icon: newIcon,
+            desc: newDesc,
+            apk: newApk,
+          },
+        ]);
+        if (error) {
+          alert("Error adding app: " + error.message);
+        } else {
+          alert("App added successfully!");
+          setNewName("");
+          setNewIcon("");
+          setNewDesc("");
+          setNewApk("");
+          fetchApps();
+        }
+      }
+
+      async function deleteApp(id) {
+        if (!confirm("Are you sure to delete this app?")) return;
+        const { error } = await supabase.from("apps").delete().eq("id", id);
+        if (error) {
+          alert("Error deleting app: " + error.message);
+        } else {
+          alert("App deleted successfully!");
+          fetchApps();
+          setSelectedApp(null);
+        }
+      }
+
+      const filteredApps = apps.filter((app) =>
+        app.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      return (
+        React.createElement("div", null,
+          React.createElement("header", null,
+            React.createElement("h1", null, "Web App Store")
+          ),
+          React.createElement("div", { className: "top-bar" },
+            React.createElement("button", {
+              className: "theme-toggle",
+              onClick: () => setTheme(theme === "light" ? "dark" : "light")
+            }, theme === "light" ? "Dark Mode" : "Light Mode"),
+            React.createElement("div", { className: "search-bar" },
+              React.createElement("input", {
+                type: "text",
+                placeholder: "Search apps...",
+                value: query,
+                onChange: e => setQuery(e.target.value)
+              })
+            ),
+            user
+              ? React.createElement("button", { onClick: signOut }, "Logout")
+              : null
+          ),
+          !user ? (
+            React.createElement("div", { className: "login-form" },
+              React.createElement("h2", null, "Admin Login"),
+              React.createElement("input", {
+                type: "email",
+                placeholder: "Email",
+                value: email,
+                onChange: e => setEmail(e.target.value)
+              }),
+              React.createElement("input", {
+                type: "password",
+                placeholder: "Password",
+                value: password,
+                onChange: e => setPassword(e.target.value)
+              }),
+              React.createElement("button", { onClick: signIn }, "Login"),
+              errorMsg && React.createElement("p", { style: { color: "red" } }, errorMsg)
+            )
+          ) : (
+            React.createElement("div", { className: "admin-panel" },
+              React.createElement("h2", null, "Admin Panel - Upload New App"),
+              React.createElement("input", {
+                type: "text",
+                placeholder: "App Name",
+                value: newName,
+                onChange: e => setNewName(e.target.value)
+              }),
+              React.createElement("input", {
+                type: "text",
+                placeholder: "Icon URL",
+                value: newIcon,
+                onChange: e => setNewIcon(e.target.value)
+              }),
+              React.createElement("input", {
+                type: "text",
+                placeholder: "Description",
+                value: newDesc,
+                onChange: e => setNewDesc(e.target.value)
+              }),
+              React.createElement("input", {
+                type: "text",
+                placeholder: "APK URL",
+                value: newApk,
+                onChange: e => setNewApk(e.target.value)
+              }),
+              React.createElement("button", { onClick: addApp }, "Add App")
+            )
+          ),
+          React.createElement("div", { className: "app-grid" },
+            loading
+              ? React.createElement("p", null, "Loading apps...")
+              : filteredApps.length === 0
+              ? React.createElement("p", null, "No apps found.")
+              : filteredApps.map(app =>
+                  React.createElement("div", {
+                    className: "app-card",
+                    key: app.id,
+                    onClick: () => setSelectedApp(app)
+                  },
+                    React.createElement("img", { src: app.icon || "https://img.icons8.com/ios-filled/50/000000/app-store.png", alt: app.name }),
+                    React.createElement("h3", null, app.name),
+                    user && React.createElement("div", { className: "actions" },
+                      React.createElement("button", {
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          deleteApp(app.id);
+                        }
+                      }, "Delete")
+                    )
+                  )
+                )
+          ),
+          selectedApp && React.createElement("div", {
+            className: "modal-bg",
+            onClick: () => setSelectedApp(null)
+          },
+            React.createElement("div", {
+              className: "modal",
+              onClick: e => e.stopPropagation()
+            },
+              React.createElement("button", {
+                className: "close-btn",
+                onClick: () => setSelectedApp(null)
+              }, "\u00D7"),
+              React.createElement("img", {
+                src: selectedApp.icon || "https://img.icons8.com/ios-filled/80/000000/app-store.png",
+                width: 80,
+                alt: selectedApp.name
+              }),
+              React.createElement("h2", null, selectedApp.name),
+              React.createElement("p", null, selectedApp.desc),
+              React.createElement("a", {
+                className: "download-btn",
+                href: selectedApp.apk,
+                target: "_blank",
+                rel: "noopener noreferrer"
+              }, "Download APK")
+            )
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+  </html>
